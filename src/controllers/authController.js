@@ -19,7 +19,7 @@ const createToken = (user) => {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 };
 
@@ -35,7 +35,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
+    const saltRounds = Number(process.env.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const user = {
@@ -55,7 +55,6 @@ const register = async (req, res, next) => {
       message: "User registered successfully",
       data: {
         user: sanitizeUser(user),
-        token,
       },
     });
   } catch (error) {
