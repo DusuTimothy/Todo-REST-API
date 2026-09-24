@@ -9,20 +9,6 @@ const sanitizeUser = (user) => ({
   createdAt: user.createdAt,
 });
 
-const createToken = (user) => {
-  if (!process.env.JWT_SECRET) {
-    const error = new Error("JWT secret is not configured");
-    error.statusCode = 500;
-    throw error;
-  }
-
-  return jwt.sign(
-    { id: user.id, email: user.email, name: user.name },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-};
-
 const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
@@ -47,8 +33,6 @@ const register = async (req, res, next) => {
     };
 
     users.push(user);
-
-    const token = createToken(user);
 
     return res.status(201).json({
       status: "success",
@@ -82,14 +66,26 @@ const login = async (req, res, next) => {
       });
     }
 
-    const token = createToken(user);
+    const createToken = (user) => {
+      if (!process.env.JWT_SECRET) {
+        const error = new Error("JWT secret is not configured");
+        error.statusCode = 500;
+        throw error;
+      }
+
+      return jwt.sign(
+        { id: user.id, email: user.email, name: user.name },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+    };
 
     return res.status(200).json({
       status: "success",
       message: "Login successful",
       data: {
         user: sanitizeUser(user),
-        token,
+        token: createToken(user),
       },
     });
   } catch (error) {
