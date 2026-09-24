@@ -23,8 +23,8 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(logger);
 
 const apiLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  limit: Number(process.env.RATE_LIMIT_MAX) || 100,
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS),
+  limit: Number(process.env.RATE_LIMIT_MAX),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -34,8 +34,8 @@ const apiLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  limit: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS),
+  limit: Number(process.env.AUTH_RATE_LIMIT_MAX),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
