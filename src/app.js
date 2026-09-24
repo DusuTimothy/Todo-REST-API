@@ -4,7 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 
 const logger = require("./middleware/logger");
-const errorHandler = require("./middleware/error");
+const { errorHandler } = require("./middleware/error");
 const authRoutes = require("./routes/auth.routes");
 const todoRoutes = require("./routes/todo.routes");
 
