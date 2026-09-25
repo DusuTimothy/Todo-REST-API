@@ -15,14 +15,14 @@ const findOwnedTodo = (id, userId) => {
 
 const createTodo = (req, res, next) => {
   try {
-    const { title, description = "", completed = false } = req.body;
+    const { title, description = ""} = req.body;
     const now = new Date().toISOString();
 
     const todo = {
       id: getNextTodoId(),
       title,
       description,
-      completed,
+      completed: false,
       userId: req.user.id,
       createdAt: now,
       updatedAt: now,
