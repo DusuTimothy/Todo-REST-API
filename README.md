@@ -244,7 +244,6 @@ curl -s http://localhost:3000/api/todos \
 - Passwords are hashed with bcrypt; never returned in responses.
 - Todo routes require a valid JWT.
 - Ownership checks prevent access to other users' todos.
-- Sensitive config lives in `.env` (not committed).
 - Request bodies are validated with Zod.
 - Rate limiting protects auth and API routes.
 # Todo-REST-API
