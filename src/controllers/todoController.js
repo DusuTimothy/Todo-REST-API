@@ -1,21 +1,23 @@
 const { todos, getNextTodoId } = require("../database");
 
-const findOwnedTodo = (id, userId) => {
-  const todo = todos.find((t) => t.id === id);
-  if (!todo) {
-    return { error: { statusCode: 404, message: "Todo not found" } };
-  }
-  if (todo.userId !== userId) {
-    return {
-      error: { statusCode: 403, message: "You do not have access to this todo" },
-    };
-  }
-  return { todo };
-};
-
 const createTodo = (req, res, next) => {
   try {
-    const { title, description = ""} = req.body;
+    const { title, description = "" } = req.body;
+    const userId = req.user.id;
+
+    const duplicate = todos.find(
+      (todo) =>
+        todo.userId === userId &&
+        todo.title.toLowerCase() === title.toLowerCase()
+    );
+
+    if (duplicate) {
+      return res.status(409).json({
+        status: "error",
+        message: "A todo with this title already exists",
+      });
+    }
+
     const now = new Date().toISOString();
 
     const todo = {
@@ -23,7 +25,7 @@ const createTodo = (req, res, next) => {
       title,
       description,
       completed: false,
-      userId: req.user.id,
+      userId,
       createdAt: now,
       updatedAt: now,
     };
@@ -67,6 +69,19 @@ const getTodos = (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+const findOwnedTodo = (id, userId) => {
+  const todo = todos.find((t) => t.id === id);
+  if (!todo) {
+    return { error: { statusCode: 404, message: "Todo not found" } };
+  }
+  if (todo.userId !== userId) {
+    return {
+      error: { statusCode: 403, message: "You do not have access to this todo" },
+    };
+  }
+  return { todo };
 };
 
 const getTodoById = (req, res, next) => {

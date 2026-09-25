@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { users } = require("../database");
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -28,7 +29,16 @@ const authenticate = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const user = users.find((u) => u.id === decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid or expired token",
+      });
+    }
+
+    req.user = { id: user.id, email: user.email, name: user.name };
     next();
   } catch (error) {
     return res.status(401).json({
