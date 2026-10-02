@@ -24,7 +24,7 @@ A Node.js / Express REST API for managing personal todos, with JWT authenticatio
 - cors
 - dotenv
 
-> Data is stored **in memory** (no external database package is installed). Data resets when the server restarts.
+> User and todo data are stored in PostgreSQL using Sequelize. Configure the database environment variables and apply migrations before starting the API.
 
 ## Project Structure
 
@@ -76,7 +76,15 @@ Edit `.env` if needed:
 | `AUTH_RATE_LIMIT_MAX` | Max auth attempts per window | `20` |
 | `FRONTEND_URL` | Allowed CORS origin | `http://localhost:5173` |
 
-3. **Start the server**
+3. **Configure and migrate the database**
+
+```bash
+npx sequelize-cli db:migrate --config config/config.js
+```
+
+Set `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, and `DATABASE_PASSWORD` in `.env` first.
+
+4. **Start the server**
 
 ```bash
 # development (auto-reload)

@@ -7,7 +7,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
-  "keywords": ["todo", "express", "jwt", "api"],
+  "keywords": [
+    "todo",
+    "express",
+    "jwt",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -20,6 +25,12 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
     "nodemon": "^3.1.14",
+    "pg": "^8.23.1",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.8",
     "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.5"
   }
 }

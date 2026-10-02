@@ -1,15 +1,19 @@
-const { todos, getNextTodoId } = require("../database");
+const { Todos } = require("../../models");
+const { Op } = require("sequelize");
 
-const createTodo = (req, res, next) => {
+const createTodo = async (req, res, next) => {
   try {
-    const { title, description = "" } = req.body;
+    const { title, description = "", completed = false } = req.body;
     const userId = req.user.id;
 
-    const duplicate = todos.find(
-      (todo) =>
-        todo.userId === userId &&
-        todo.title.toLowerCase() === title.toLowerCase()
-    );
+    const duplicate = await Todos.findOne({
+      where: {
+        userId,
+        title: {
+          [Op.iLike]: title,
+        },
+      },
+    });
 
     if (duplicate) {
       return res.status(409).json({
@@ -18,19 +22,12 @@ const createTodo = (req, res, next) => {
       });
     }
 
-    const now = new Date().toISOString();
-
-    const todo = {
-      id: getNextTodoId(),
+    const todo = await Todos.create({
       title,
       description,
-      completed: false,
+      completed,
       userId,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    todos.push(todo);
+    });
 
     return res.status(201).json({
       status: "success",
@@ -42,24 +39,23 @@ const createTodo = (req, res, next) => {
   }
 };
 
-const getTodos = (req, res, next) => {
+const getTodos = async (req, res, next) => {
   try {
     const { search, completed } = req.validatedQuery || {};
+    const where = { userId: req.user.id };
 
-    let results = todos.filter((todo) => todo.userId === req.user.id);
-
-    if (typeof completed === "boolean") {
-      results = results.filter((todo) => todo.completed === completed);
-    }
-
+    if (typeof completed === "boolean") where.completed = completed;
     if (search) {
-      const term = search.toLowerCase();
-      results = results.filter(
-        (todo) =>
-          todo.title.toLowerCase().includes(term) ||
-          (todo.description && todo.description.toLowerCase().includes(term))
-      );
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+      ];
     }
+
+    const results = await Todos.findAll({
+      where,
+      order: [["createdAt", "DESC"]],
+    });
 
     return res.status(200).json({
       status: "success",
@@ -71,23 +67,18 @@ const getTodos = (req, res, next) => {
   }
 };
 
-const findOwnedTodo = (id, userId) => {
-  const todo = todos.find((t) => t.id === id);
+const findOwnedTodo = async (id, userId) => {
+  const todo = await Todos.findOne({ where: { id, userId } });
   if (!todo) {
     return { error: { statusCode: 404, message: "Todo not found" } };
-  }
-  if (todo.userId !== userId) {
-    return {
-      error: { statusCode: 403, message: "You do not have access to this todo" },
-    };
   }
   return { todo };
 };
 
-const getTodoById = (req, res, next) => {
+const getTodoById = async (req, res, next) => {
   try {
     const { id } = req.validatedParams;
-    const { todo, error } = findOwnedTodo(id, req.user.id);
+    const { todo, error } = await findOwnedTodo(id, req.user.id);
 
     if (error) {
       return res.status(error.statusCode).json({
@@ -105,10 +96,10 @@ const getTodoById = (req, res, next) => {
   }
 };
 
-const updateTodo = (req, res, next) => {
+const updateTodo = async (req, res, next) => {
   try {
     const { id } = req.validatedParams;
-    const { todo, error } = findOwnedTodo(id, req.user.id);
+    const { todo, error } = await findOwnedTodo(id, req.user.id);
 
     if (error) {
       return res.status(error.statusCode).json({
@@ -117,12 +108,7 @@ const updateTodo = (req, res, next) => {
       });
     }
 
-    const { title, description, completed } = req.body;
-
-    if (title !== undefined) todo.title = title;
-    if (description !== undefined) todo.description = description;
-    if (completed !== undefined) todo.completed = completed;
-    todo.updatedAt = new Date().toISOString();
+    await todo.update(req.body);
 
     return res.status(200).json({
       status: "success",
@@ -134,10 +120,10 @@ const updateTodo = (req, res, next) => {
   }
 };
 
-const deleteTodo = (req, res, next) => {
+const deleteTodo = async (req, res, next) => {
   try {
     const { id } = req.validatedParams;
-    const { todo, error } = findOwnedTodo(id, req.user.id);
+    const { todo, error } = await findOwnedTodo(id, req.user.id);
 
     if (error) {
       return res.status(error.statusCode).json({
@@ -146,8 +132,7 @@ const deleteTodo = (req, res, next) => {
       });
     }
 
-    const index = todos.findIndex((t) => t.id === todo.id);
-    todos.splice(index, 1);
+    await todo.destroy();
 
     return res.status(200).json({
       status: "success",

@@ -1,19 +1,20 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { users, getNextUserId } = require("../database");
+const { Users } = require("../../models");
 
 const sanitizeUser = (user) => ({
   id: user.id,
   name: user.name,
   email: user.email,
   createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
 });
 
 const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    const existingUser = users.find((user) => user.email === email);
+    const existingUser = await Users.findOne({ where: { email } });
     if (existingUser) {
       return res.status(409).json({
         status: "error",
@@ -24,15 +25,11 @@ const register = async (req, res, next) => {
     const saltRounds = Number(process.env.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const user = {
-      id: getNextUserId(),
+    const user = await Users.create({
       name,
       email,
       password: hashedPassword,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(user);
+    });
 
     return res.status(201).json({
       status: "success",
@@ -50,7 +47,7 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = users.find((u) => u.email === email);
+    const user = await Users.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
         status: "error",

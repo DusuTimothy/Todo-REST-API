@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const { users } = require("../database");
+const { Users } = require("../../models");
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,17 +20,31 @@ const authenticate = (req, res, next) => {
     });
   }
 
+  if (!process.env.JWT_SECRET) {
+    const error = new Error("JWT secret is not configured");
+    error.statusCode = 500;
+    return next(error);
+  }
+
+  let decoded;
   try {
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({
-        status: "error",
-        message: "JWT secret is not configured",
-      });
-    }
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return res.status(401).json({
+      status: "error",
+      message: "Invalid or expired token",
+    });
+  }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = users.find((u) => u.id === decoded.id);
+  if (typeof decoded !== "object" || typeof decoded.id !== "number") {
+    return res.status(401).json({
+      status: "error",
+      message: "Invalid or expired token",
+    });
+  }
 
+  try {
+    const user = await Users.findByPk(decoded.id);
     if (!user) {
       return res.status(401).json({
         status: "error",
@@ -39,12 +53,9 @@ const authenticate = (req, res, next) => {
     }
 
     req.user = { id: user.id, email: user.email, name: user.name };
-    next();
+    return next();
   } catch (error) {
-    return res.status(401).json({
-      status: "error",
-      message: "Invalid or expired token",
-    });
+    return next(error);
   }
 };
 
